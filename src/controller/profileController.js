@@ -5,7 +5,6 @@ import { validateProfilePhoto } from '../utils/profilePhoto.js';
 
 export const getMyProfile = async (req, res) => {
   const profile = await EmployeeProfile.findOne({ userId: req.user._id });
-  if (!profile) return res.status(404).json({ message: 'Profile not found' });
   res.json({ profile });
 };
 
