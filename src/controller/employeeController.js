@@ -6,6 +6,7 @@ import User, { ROLES } from '../models/people/User.js';
 import sendEmail from '../utils/sendEmail.js';
 import { scopeFilter } from '../utils/scope.js';
 import { clientUrl } from '../utils/clientOrigins.js';
+import { validateProfilePhoto } from '../utils/profilePhoto.js';
 
 export const getEmployees = async (req, res) => {
   const filter = await scopeFilter(req.user, 'userId');
@@ -39,6 +40,7 @@ export const createEmployee = async (req, res) => {
     hireDate,
     jobTitle,
     employmentType,
+    profilePhoto,
   } = req.body;
 
   if (typeof email !== 'string' || !email.trim() || !firstName || !lastName || !dateOfBirth || !hireDate || !jobTitle) {
@@ -50,13 +52,17 @@ export const createEmployee = async (req, res) => {
   if (!EmploymentType.includes(employmentType)) {
     return res.status(400).json({ message: 'Choose a valid employment type' });
   }
+  if (profilePhoto) {
+    const photoError = validateProfilePhoto(profilePhoto);
+    if (photoError) return res.status(400).json({ message: photoError });
+  }
 
   const normalizedEmail = email.trim().toLowerCase();
   if (await User.exists({ email: normalizedEmail })) {
     return res.status(409).json({ message: 'A user with this email already exists' });
   }
 
-  let selectedManagerId = managerId || null;
+  let selectedManagerId = role === 'manager' ? null : managerId || null;
   if (selectedManagerId) {
     if (!mongoose.isValidObjectId(selectedManagerId)) {
       return res.status(400).json({ message: 'Choose a valid manager' });
@@ -101,6 +107,7 @@ export const createEmployee = async (req, res) => {
         lastName: lastName.trim(),
         email: normalizedEmail,
       },
+      profilePhoto: profilePhoto || null,
       dateOfBirth: dob,
       hireDate: hired,
       jobTitle: jobTitle.trim(),
@@ -112,11 +119,17 @@ export const createEmployee = async (req, res) => {
   }
 
   const inviteLink = `${clientUrl}/accept-invite/${inviteToken}`;
-  await sendEmail({
-    to: normalizedEmail,
-    subject: 'You have been invited',
-    html: `<p>Set up your account: <a href="${inviteLink}">${inviteLink}</a></p>`,
-  });
+  try {
+    await sendEmail({
+      to: normalizedEmail,
+      subject: 'You have been invited',
+      html: `<p>Set up your account: <a href="${inviteLink}">${inviteLink}</a></p>`,
+    });
+  } catch (error) {
+    await EmployeeProfile.deleteOne({ _id: profile._id });
+    await User.deleteOne({ _id: user._id });
+    return res.status(503).json({ message: error.message });
+  }
 
   res.status(201).json({ message: 'Employee invited', item: profile });
 };

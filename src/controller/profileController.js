@@ -1,6 +1,7 @@
 // controller/profileController.js
 import EmployeeProfile from '../models/people/employeeProfile.js';
 import { scopeFilter } from '../utils/scope.js';
+import { validateProfilePhoto } from '../utils/profilePhoto.js';
 
 export const getMyProfile = async (req, res) => {
   const profile = await EmployeeProfile.findOne({ userId: req.user._id });
@@ -43,20 +44,10 @@ export const updateMyProfile = async (req, res) => {
 
 // Only accept a small image, and only the three types the frontend offers.
 // Data URLs look like: "data:image/png;base64,iVBORw0KGgo..."
-const MAX_PHOTO_BYTES = 2 * 1024 * 1024; // 2MB
-const PHOTO_PATTERN = /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/;
-
 const savePhoto = async (req, res, filter) => {
   const { photo } = req.body;
-
-  if (!PHOTO_PATTERN.test(photo || '')) {
-    return res.status(400).json({ message: 'Please choose a JPEG, PNG or WebP image' });
-  }
-  // Roughly how many bytes the base64 text decodes to
-  const approxBytes = photo.length * 0.75;
-  if (approxBytes > MAX_PHOTO_BYTES) {
-    return res.status(400).json({ message: 'Image is too large (max 2MB)' });
-  }
+  const validationError = validateProfilePhoto(photo);
+  if (validationError) return res.status(400).json({ message: validationError });
 
   const profile = await EmployeeProfile.findOneAndUpdate(
     filter,
