@@ -21,15 +21,14 @@ import notificationRoutes from './src/routes/notificationRoutes.js';
 import businessPartnerRoutes from './src/routes/businessPartnerRoutes.js';
 import employeeRoutes from './src/routes/employeeRoutes.js';
 import { setupSocket } from './src/socket.js';
+import { clientOrigins } from './src/utils/clientOrigins.js';
 
 const app = express();
 
 app.use(express.json({ limit: '3mb' }));   // lets us read req.body (raised so a profile photo fits)
 app.use(cookieParser());   // lets us read req.cookies (the login cookie)
 
-// CORS: the browser blocks React (port 5173) from calling this server (port 5000)
-// unless we allow it here. credentials: true lets the login cookie travel with each request.
-app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }));
+app.use(cors({ origin: clientOrigins, credentials: true }));
 
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);

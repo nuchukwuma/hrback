@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import User from '../models/people/User.js';
 import sendEmail from '../utils/sendEmail.js';
+import { clientUrl } from '../utils/clientOrigins.js';
 
 export const inviteUser = async (req, res) => {
   const { email, role, managerId, teamId } = req.body;
@@ -20,7 +21,7 @@ export const inviteUser = async (req, res) => {
     inviteExpires: Date.now() + 1000 * 60 * 60 * 72, 
   });
 
-  const inviteLink = `${process.env.CLIENT_URL}/accept-invite/${inviteToken}`;
+  const inviteLink = `${clientUrl}/accept-invite/${inviteToken}`;
   await sendEmail({
     to: email,
     subject: 'You have been invited',

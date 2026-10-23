@@ -5,6 +5,7 @@ import Team from '../models/people/Team.js';
 import User, { ROLES } from '../models/people/User.js';
 import sendEmail from '../utils/sendEmail.js';
 import { scopeFilter } from '../utils/scope.js';
+import { clientUrl } from '../utils/clientOrigins.js';
 
 export const getEmployees = async (req, res) => {
   const filter = await scopeFilter(req.user, 'userId');
@@ -110,7 +111,7 @@ export const createEmployee = async (req, res) => {
     throw error;
   }
 
-  const inviteLink = `${process.env.CLIENT_URL}/accept-invite/${inviteToken}`;
+  const inviteLink = `${clientUrl}/accept-invite/${inviteToken}`;
   await sendEmail({
     to: normalizedEmail,
     subject: 'You have been invited',

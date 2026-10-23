@@ -7,10 +7,11 @@ import Channel from './models/chat/Channel.js';
 import Message from './models/chat/Message.js';
 import { canAccessChannel, channelFilterFor } from './utils/chatAccess.js';
 import { roomOf } from './utils/chatRooms.js';
+import { clientOrigins } from './utils/clientOrigins.js';
 
 export function setupSocket(httpServer) {
   const io = new Server(httpServer, {
-    cors: { origin: process.env.CLIENT_URL, credentials: true },
+    cors: { origin: clientOrigins, credentials: true },
   });
 
   // 1. The security guard. It runs once for every new connection.
